@@ -47,6 +47,38 @@ const frames = [
 
 // Different animation types
 const animations = {
+  cat: [
+    `
+     /\\_/\\
+    ( o.o )
+     > ^ <
+            `,
+    `
+     /\\_/\\
+    ( o.o )
+    /  ^  \\
+            `,
+    `
+     /\\_/\\
+    ( o.o )
+   /  ^  \\
+            `,
+    `
+    /\\_/\\
+   ( o.o )
+  /  ^  \\
+            `,
+    `
+   /\\_/\\
+  ( o.o )
+ /  ^  \\
+            `,
+    `
+  /\\_/\\
+ ( o.o )
+/  ^  \\
+            `
+  ],
   parrot: [
     `
    ╭──────────────────╮
@@ -115,9 +147,9 @@ const animations = {
 };
 
 app.get('/', (req, res) => {
-  // Get animation type from query parameter, default to 'parrot'
-  const animationType = req.query.animation || 'parrot';
-  const animationFrames = animations[animationType] || animations.parrot;
+  // Get animation type from query parameter, default to 'cat'
+  const animationType = req.query.animation || 'cat';
+  const animationFrames = animations[animationType] || animations.cat;
 
   // Set headers for streaming response
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -138,13 +170,24 @@ app.get('/', (req, res) => {
     frameIndex = (frameIndex + 1) % animationFrames.length;
   }, 200); // Change frame every 200ms
 
+  // Set timeout to disconnect after 10 seconds
+  const timeout = setTimeout(() => {
+    clearInterval(interval);
+    res.write('\x1b[2J\x1b[H');
+    res.write('🕐 Connection timeout (10s limit)\n');
+    res.write('👋 Thanks for watching!\n');
+    res.end();
+  }, 10000); // 10 seconds
+
   // Handle client disconnect
   req.on('close', () => {
     clearInterval(interval);
+    clearTimeout(timeout);
   });
 
   req.on('end', () => {
     clearInterval(interval);
+    clearTimeout(timeout);
   });
 });
 
@@ -169,8 +212,10 @@ app.get('/animations', (req, res) => {
 
 app.listen(port, () => {
   console.log(`🚀 ASCII CLI Server running on port ${port}`);
+  console.log(`🐱 Default animation: cat`);
   console.log(`📺 Available animations: ${Object.keys(animations).join(', ')}`);
-  console.log(`🔗 Usage: curl localhost:${port}/?animation=parrot`);
+  console.log(`🔗 Usage: curl localhost:${port}/`);
+  console.log(`🔗 Or try: curl localhost:${port}/?animation=parrot`);
   console.log(`🔗 Or try: curl localhost:${port}/?animation=hacker`);
   console.log(`🔗 Or try: curl localhost:${port}/?animation=matrix`);
 });
